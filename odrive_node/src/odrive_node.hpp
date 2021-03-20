@@ -38,10 +38,12 @@ using namespace std::chrono_literals;
 class ODriveNode : public rclcpp::Node
 {
 public:
-    ODriveNode(const std::string port = "/dev/ttyS1", const int motor = 0, const int rate_position_velocity = 1, const int rate_bus_voltage = 2, const int rate_temperature = 3, const int rate_torque = 4);
-
+    ODriveNode();
+    ~ODriveNode();
+    
 private:
-    ODrive odrive;
+    std::string port;
+    ODrive *odrive;
     int motor;
     int counter;
     int rate_position_velocity;

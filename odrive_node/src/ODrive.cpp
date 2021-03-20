@@ -1,6 +1,32 @@
 #include "ODrive.hpp"
 
 /*
+ODrive starts by opening UART connection
+*/
+ODrive::ODrive(const std::string port, const rclcpp::Node *node) : node(node)
+{
+    // this.node = node;
+    fd = open_port(port);
+    if (fd == -1)
+    {
+        RCLCPP_INFO(node->get_logger(), "ODrive could not open UART port\n");
+        throw std::string("ODrive could not open UART port");
+    }
+}
+
+/*
+Cleanup by closing UART connection
+*/
+ODrive::~ODrive()
+{
+
+    flock(fd, LOCK_UN);
+    close(fd);
+    RCLCPP_INFO(node->get_logger(), "Odrive closed");
+}
+
+
+/*
 returns file descriptor with baudrate 115200,
 returns -1 if oening fails
 */
@@ -80,7 +106,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1")
 /*
 bitwise and each char
 */
-int ODrive::checksum(std::string cmd)
+int ODrive::checksum(const std::string cmd)
 {
     int cs = 0;
     for (long unsigned int i = 0; i < cmd.length(); i++)
@@ -97,14 +123,15 @@ int ODrive::checksum(std::string cmd)
 /*
 returns number of send chars
 */
-int ODrive::send(std::string msg, const std::string *funct_name)
+int ODrive::send(const std::string msg, const std::string *funct_name)
 {
     // flush in/out
     tcflush(fd, TCIOFLUSH);
-    msg += " *";
-    msg += std::to_string(checksum(msg));
-    msg += "\n";
-    int w = write(fd, msg.c_str(), msg.size());
+    std::string msg_out = msg;
+    msg_out += " *";
+    msg_out += std::to_string(checksum(msg_out));
+    msg_out += "\n";
+    int w = write(fd, msg_out.c_str(), msg_out.size());
     if (w == 0)
     {
         RCLCPP_INFO(node->get_logger(), "%s send zero chars\n", funct_name->c_str());
@@ -138,31 +165,6 @@ bool ODrive::check_double_output(const std::string msg, const std::string *funct
     }
     RCLCPP_INFO(node->get_logger(), "%s : regex caught wrong data: '%s'\n", funct_name->c_str(), msg);
     return false;
-}
-
-/*
-ODrive starts by opening UART connection
-*/
-ODrive::ODrive(const std::string port, const rclcpp::Node *node) : node(node)
-{
-    // this.node = node;
-    fd = open_port(port);
-    if (fd == -1)
-    {
-        RCLCPP_INFO(node->get_logger(), "ODrive could not open UART port\n");
-        throw std::string("ODrive could not open UART port");
-    }
-}
-
-/*
-Cleanup by closing UART connection
-*/
-ODrive::~ODrive()
-{
-
-    flock(fd, LOCK_UN);
-    close(fd);
-    RCLCPP_INFO(node->get_logger(), "Odrive closed");
 }
 
 /*

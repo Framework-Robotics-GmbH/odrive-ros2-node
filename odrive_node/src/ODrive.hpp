@@ -40,7 +40,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-
 #include <sys/types.h>
 #include <stdlib.h>
 #include "rclcpp/rclcpp.hpp"
@@ -52,21 +51,21 @@ public:
     ~ODrive();
 
     // Commands
-    int setVelocity(int motor, float velocity);
+    int setVelocity(const int motor, const float velocity);
     int stop();
 
     // Getters
-    std::pair<float, float> getPosition_Velocity(int motor_number);
+    std::pair<float, float> getPosition_Velocity(const int motor_number);
     float getBusVoltage();
-    float getTemperature(int motor);
-    float getTorque(int motor);
+    float getTemperature(const int motor);
+    float getTorque(const int motor);
 
     // General helper functions
-    int checksum(std::string cmd);
+    int checksum(const std::string cmd);
 
 private:
-    int open_port(std::string port);
-    int send(std::string cmd, const std::string *funct_name);
+    int open_port(const std::string port);
+    int send(const std::string cmd, const std::string *funct_name);
     std::string recieve(const std::string *funct_name);
     bool check_single_output(const std::string s, const std::string *funct_name);
     bool check_double_output(const std::string s, const std::string *funct_name);
