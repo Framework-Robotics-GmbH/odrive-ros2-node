@@ -22,12 +22,13 @@ ROS2-Node for ODrive
 
 
 # Topics
-publishes:
-- <std_msgs/Float32>"/odrive_velocity"
-- <std_msgs/Float32>"/odrive_position"
-- <std_msgs/Float32>"/odrive_bus_voltage"
-- <std_msgs/Float32>"/odrive_temperature"
-- <std_msgs/Float32>"/odrive_torque"
+- publishes:
+- - <std_msgs/Float32>"/odrive_velocity"
+- - <std_msgs/Float32>"/odrive_position"
+- - <std_msgs/Float32>"/odrive_bus_voltage"
+- - <std_msgs/Float32>"/odrive_temperature"
+- - <std_msgs/Float32>"/odrive_torque"
+- set rate to 0 to disable topic
 
 listens to:
 - <std_msgs/Float32>"/odrive_set_velocity"
