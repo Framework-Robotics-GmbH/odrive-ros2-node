@@ -73,7 +73,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   }
   if (motor == 2 || motor == 1)
   {
-    subscription_velocity0 = this->create_subscription<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_set_velocity", 10, std::bind(&ODriveNode::velocity_callback1, this, std::placeholders::_1));
+    subscription_velocity1 = this->create_subscription<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_set_velocity", 10, std::bind(&ODriveNode::velocity_callback1, this, std::placeholders::_1));
   }
 
 //set callback rate
