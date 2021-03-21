@@ -40,25 +40,29 @@ class ODriveNode : public rclcpp::Node
 public:
     ODriveNode();
     ~ODriveNode();
-    
+
 private:
-    std::string port;
     ODrive *odrive;
-    int motor;
-    int counter;
-    int rate_position_velocity;
+    int rate_position_velocity ;
     int rate_bus_voltage;
     int rate_temperature;
     int rate_torque;
+    int counter;
+    int motor;
     int order[4] = {0, 0, 0, 0};
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_position;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity0;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity1;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_position0;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_position1;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_torque0;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_torque1;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_bus_voltage;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_torque;
-
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature0;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature1;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity0;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity1;
     void odrive_callback();
-    void velocity_callback(const std_msgs::msg::Float32::SharedPtr msg);
+    void velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg);
+    void velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg);
 };

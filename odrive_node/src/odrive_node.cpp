@@ -2,16 +2,18 @@
 
 ODriveNode::ODriveNode() : Node("odrive_node")
 {
+  std::string port = "/dev/ttyS1";
   counter = 0;
-  // request parameter
-  this->declare_parameter<std::string>("port", "/dev/ttyS1");
+
+  // request parameter from Node
+  this->declare_parameter<std::string>("port", port);
   this->declare_parameter<int>("motor", 0);
   this->declare_parameter<int>("rate_position_velocity", 1);
   this->declare_parameter<int>("rate_bus_voltage", 2);
   this->declare_parameter<int>("rate_temperature", 3);
   this->declare_parameter<int>("rate_torque", 4);
-  // set parameter
 
+  // node sets parameter, if given
   this->get_parameter("port", port);
   this->get_parameter("motor", motor);
   this->get_parameter("rate_position_velocity", rate_position_velocity);
@@ -21,26 +23,60 @@ ODriveNode::ODriveNode() : Node("odrive_node")
 
   odrive = new ODrive(port, this);
 
-  // create topic, if rate != 0
+  // create topic, if rate != 0, setup motor = 0, motor = 1, or both if motor = 2
   if (rate_position_velocity)
   {
-    publisher_velocity = this->create_publisher<std_msgs::msg::Float32>("odrive_velocity", 10);
-    publisher_position = this->create_publisher<std_msgs::msg::Float32>("odrive_position", 10);
+    if (motor == 2 || motor == 0)
+    {
+      publisher_velocity0 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(0) + "_velocity", 10);
+      publisher_position0 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(0) + "_position", 10);
+    }
+    if (motor == 2 || motor == 1)
+    {
+      publisher_velocity1 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_velocity", 10);
+      publisher_position1 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_position", 10);
+    }
   }
+
+  if (rate_torque)
+  {
+    if (motor == 2 || motor == 0)
+    {
+      publisher_torque0 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(0) + "_torque", 10);
+    }
+    if (motor == 2 || motor == 1)
+    {
+      publisher_torque1 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_torque", 10);
+    }
+  }
+
   if (rate_bus_voltage)
   {
     publisher_bus_voltage = this->create_publisher<std_msgs::msg::Float32>("odrive_bus_voltage", 10);
   }
+
   if (rate_temperature)
   {
-    publisher_temperature = this->create_publisher<std_msgs::msg::Float32>("odrive_temperature", 10);
+    if (motor == 2 || motor == 0)
+    {
+      publisher_temperature0 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(0) + "_temperature", 10);
+    }
+    if (motor == 2 || motor == 1)
+    {
+      publisher_temperature1 = this->create_publisher<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_temperature", 10);
+    }
   }
-  if (rate_torque)
-  {
-    publisher_torque = this->create_publisher<std_msgs::msg::Float32>("odrive_torque", 10);
-  }
-  subscription_velocity = this->create_subscription<std_msgs::msg::Float32>("odrive_set_velocity", 10, std::bind(&ODriveNode::velocity_callback, this, std::placeholders::_1));
 
+  if (motor == 2 || motor == 0)
+  {
+    subscription_velocity0 = this->create_subscription<std_msgs::msg::Float32>("odrive" + std::to_string(0) + "_set_velocity", 10, std::bind(&ODriveNode::velocity_callback0, this, std::placeholders::_1));
+  }
+  if (motor == 2 || motor == 1)
+  {
+    subscription_velocity0 = this->create_subscription<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_set_velocity", 10, std::bind(&ODriveNode::velocity_callback1, this, std::placeholders::_1));
+  }
+
+//set callback rate
   timer_ = this->create_wall_timer(10ms, std::bind(&ODriveNode::odrive_callback, this));
 }
 
@@ -49,11 +85,18 @@ ODriveNode::~ODriveNode()
   delete (odrive);
 }
 
-// send velocity to odrive
-void ODriveNode::velocity_callback(const std_msgs::msg::Float32::SharedPtr msg)
+// send velocity to odrive motor 0
+void ODriveNode::velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg)
 {
   float velocity = msg->data;
-  odrive->setVelocity(motor, velocity);
+  odrive->setVelocity(0, velocity);
+}
+
+// send velocity to odrive motor 1
+void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg)
+{
+  float velocity = msg->data;
+  odrive->setVelocity(1, velocity);
 }
 
 void ODriveNode::odrive_callback()
@@ -72,20 +115,37 @@ void ODriveNode::odrive_callback()
     ++counter %= 100;
   }
 
+  // publish position & velocity
   if (order[0])
   {
     order[0] = 0;
-    auto values = odrive->getPosition_Velocity(0);
-    if (values.first != -1.0)
+    std::pair<float, float> values;
+    auto position_msg = std_msgs::msg::Float32();
+    auto velovity_msg = std_msgs::msg::Float32();
+    if (motor == 2 || motor == 0)
     {
-      auto position_msg = std_msgs::msg::Float32();
-      position_msg.data = values.first;
-      publisher_position->publish(position_msg);
-      auto velovity_msg = std_msgs::msg::Float32();
-      velovity_msg.data = values.second;
-      publisher_velocity->publish(velovity_msg);
+      values = odrive->getPosition_Velocity(0);
+      if (values.first != -1.0)
+      {
+        position_msg.data = values.first;
+        publisher_position0->publish(position_msg);
+        velovity_msg.data = values.second;
+        publisher_velocity0->publish(velovity_msg);
+      }
+    }
+    if (motor == 2 || motor == 1)
+    {
+      values = odrive->getPosition_Velocity(1);
+      if (values.first != -1.0)
+      {
+        position_msg.data = values.first;
+        publisher_position1->publish(position_msg);
+        velovity_msg.data = values.second;
+        publisher_velocity1->publish(velovity_msg);
+      }
     }
   }
+  // publish bus voltage
   else if (order[1])
   {
     order[1] = 0;
@@ -97,26 +157,54 @@ void ODriveNode::odrive_callback()
       publisher_bus_voltage->publish(voltage_msg);
     }
   }
+  // publish temperature
   else if (order[2])
   {
     order[2] = 0;
-    float temperature = odrive->getTemperature(0);
-    if (temperature != -1.0)
+    float temperature;
+    auto temperature_msg = std_msgs::msg::Float32();
+    if (motor == 2 || motor == 0)
     {
-      auto temperature_msg = std_msgs::msg::Float32();
-      temperature_msg.data = temperature;
-      publisher_temperature->publish(temperature_msg);
+      temperature = odrive->getTemperature(0);
+      if (temperature != -1.0)
+      {
+        temperature_msg.data = temperature;
+        publisher_temperature0->publish(temperature_msg);
+      }
+    }
+    if (motor == 2 || motor == 1)
+    {
+      temperature = odrive->getTemperature(1);
+      if (temperature != -1.0)
+      {
+        temperature_msg.data = temperature;
+        publisher_temperature1->publish(temperature_msg);
+      }
     }
   }
+  // publish torque
   else if (order[3])
   {
     order[3] = 0;
-    float torque = odrive->getTorque(0);
-    if (torque != -1.0)
+    float torque;
+    auto torque_msg = std_msgs::msg::Float32();
+    if (motor == 2 || motor == 0)
     {
-      auto torque_msg = std_msgs::msg::Float32();
-      torque_msg.data = torque;
-      publisher_torque->publish(torque_msg);
+      torque = odrive->getTorque(0);
+      if (torque != -1.0)
+      {
+        torque_msg.data = torque;
+        publisher_torque0->publish(torque_msg);
+      }
+    }
+    if (motor == 2 || motor == 1)
+    {
+      torque = odrive->getTorque(1);
+      if (torque != -1.0)
+      {
+        torque_msg.data = torque;
+        publisher_torque1->publish(torque_msg);
+      }
     }
   }
 }
