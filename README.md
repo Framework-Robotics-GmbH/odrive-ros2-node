@@ -13,13 +13,17 @@ ROS2-Node for ODrive
 ## example
 - rate_bus_voltage = 1, rate_temperature = 2
 - output:
+- counter 0:
   - bus_voltage
+- counter 1:
   - bus_voltage
   - temperature
+- counter 3:
   - bus_voltage
+- counter 4:
   - bus_voltage
   - temperature
-
+...
 
 # Topics
 - publishes:
