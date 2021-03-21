@@ -10,6 +10,7 @@ ROS2-Node for ODrive
 - node polls one value every 10ms
 - inner counter spins from 0 to 100
 - request rate uses modulo to manage polling order
+- 
 ## example
 - rate_bus_voltage = 1, rate_temperature = 2
 - output:
@@ -27,18 +28,20 @@ ROS2-Node for ODrive
 
 # Topics
 - publishes:
-- - <std_msgs/Float32>"/odrive_velocity"
-- - <std_msgs/Float32>"/odrive_position"
+- - <std_msgs/Float32>"/odrive0/1_velocity"
+- - <std_msgs/Float32>"/odrive0/1_position"
 - - <std_msgs/Float32>"/odrive_bus_voltage"
-- - <std_msgs/Float32>"/odrive_temperature"
-- - <std_msgs/Float32>"/odrive_torque"
+- - <std_msgs/Float32>"/odrive0/1_temperature"
+- - <std_msgs/Float32>"/odrive0/1_torque"
 - set rate to 0 to disable topic
 
 listens to:
-- <std_msgs/Float32>"/odrive_set_velocity"
+- <std_msgs/Float32>"/odrive0_set_velocity"
+- <std_msgs/Float32>"/odrive1_set_velocity"
 
 # Usage
 - ros2 run odrive_node odrive_node
+- set motor variable to 0(default), 1, or 2 to set both to active
 - (set to defaults)
 - - ros2 run odrive_node odrive_node --ros-args --remap __ns:=/<your-namespace> -p port:='/dev/ttyS1' -p motor:=0 -p rate_position_velocity:=1  -p rate_bus_voltage:=2 -p rate_temperature:=3 -p rate_torque:=4
 
