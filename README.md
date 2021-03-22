@@ -4,7 +4,7 @@ ROS2-Node for ODrive
 # Features:
 - polls odrive velocity, motor_position, applied voltage, odrive temperature and applied torque
 - sets desired velocity
-- Uses Checksum to communicate with ODrive
+- Uses Checksum when communicating with ODrive
 
 # Inner workings
 - node polls one value every 10ms
