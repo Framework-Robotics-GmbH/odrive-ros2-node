@@ -10,20 +10,20 @@ ROS2-Node for ODrive
 - node polls one value every 10ms
 - inner counter spins from 0 to 100
 - request rate uses modulo to manage polling order
-- 
+
 ## example
 - rate_bus_voltage = 1, rate_temperature = 2
 - output:
 - counter 0:
-  - bus_voltage
+  - (@10ms)bus_voltage
 - counter 1:
-  - bus_voltage
-  - temperature
+  - (@20ms)bus_voltage
+  - (@30ms)temperature
 - counter 3:
-  - bus_voltage
+  - (@40ms)bus_voltage
 - counter 4:
-  - bus_voltage
-  - temperature
+  - (@50ms)bus_voltage
+  - (@60ms)temperature
 - ...
 
 # Topics
