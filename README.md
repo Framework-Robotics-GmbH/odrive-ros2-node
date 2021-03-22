@@ -8,8 +8,7 @@ ROS2-Node for ODrive
 
 # Inner workings
 - node polls one value every 10ms
-- inner counter spins from 0 to 100
-- request rate uses modulo to manage polling order
+- request rate sets priority in poll-list using modulo(0 - 99)
 
 ## example
 - rate_bus_voltage = 1, rate_temperature = 2
@@ -50,6 +49,7 @@ listens to:
 # Usage
 - ros2 run odrive_node odrive_node
 - set motor variable to 0(default), 1, or 2 to set both to active
+- set rate from 0 to 99
 - (set to defaults)
 - - ros2 run odrive_node odrive_node --ros-args --remap __ns:=/<your-namespace> -p port:='/dev/ttyS1' -p motor:=0 -p rate_position_velocity:=1  -p rate_bus_voltage:=2 -p rate_temperature:=3 -p rate_torque:=4
 
