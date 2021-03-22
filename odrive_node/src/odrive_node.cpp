@@ -8,23 +8,23 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   // request parameter from Node
   this->declare_parameter<std::string>("port", port);
   this->declare_parameter<int>("motor", 0);
-  this->declare_parameter<int>("rate_position_velocity", 1);
-  this->declare_parameter<int>("rate_bus_voltage", 2);
-  this->declare_parameter<int>("rate_temperature", 3);
-  this->declare_parameter<int>("rate_torque", 4);
+  this->declare_parameter<int>("priority_position_velocity", 1);
+  this->declare_parameter<int>("priority_bus_voltage", 2);
+  this->declare_parameter<int>("priority_temperature", 3);
+  this->declare_parameter<int>("priority_torque", 4);
 
   // node sets parameter, if given
   this->get_parameter("port", port);
   this->get_parameter("motor", motor);
-  this->get_parameter("rate_position_velocity", rate_position_velocity);
-  this->get_parameter("rate_bus_voltage", rate_bus_voltage);
-  this->get_parameter("rate_temperature", rate_temperature);
-  this->get_parameter("rate_torque", rate_torque);
+  this->get_parameter("priority_position_velocity", priority_position_velocity);
+  this->get_parameter("priority_bus_voltage", priority_bus_voltage);
+  this->get_parameter("priority_temperature", priority_temperature);
+  this->get_parameter("priority_torque", priority_torque);
 
   odrive = new ODrive(port, this);
 
-  // create topic, if rate != 0, setup motor = 0, motor = 1, or both if motor = 2
-  if (rate_position_velocity)
+  // create topic, if priority != 0, setup motor = 0, motor = 1, or both if motor = 2
+  if (priority_position_velocity)
   {
     if (motor == 2 || motor == 0)
     {
@@ -38,7 +38,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
     }
   }
 
-  if (rate_torque)
+  if (priority_torque)
   {
     if (motor == 2 || motor == 0)
     {
@@ -50,12 +50,12 @@ ODriveNode::ODriveNode() : Node("odrive_node")
     }
   }
 
-  if (rate_bus_voltage)
+  if (priority_bus_voltage)
   {
     publisher_bus_voltage = this->create_publisher<std_msgs::msg::Float32>("odrive_bus_voltage", 10);
   }
 
-  if (rate_temperature)
+  if (priority_temperature)
   {
     if (motor == 2 || motor == 0)
     {
@@ -101,16 +101,16 @@ void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg)
 
 void ODriveNode::odrive_callback()
 {
-  // start one request at a time, skip if rate = 0
+  // start one request at a time, skip if priority = 0
   if (!(order[0] || order[1] || order[2] || order[3]))
   {
-    if (rate_position_velocity && (counter % rate_position_velocity == 0))
+    if (priority_position_velocity && (counter % priority_position_velocity == 0))
       order[0] = 1;
-    if (rate_bus_voltage && (counter % rate_bus_voltage == 0))
+    if (priority_bus_voltage && (counter % priority_bus_voltage == 0))
       order[1] = 1;
-    if (rate_temperature && (counter % rate_temperature == 0))
+    if (priority_temperature && (counter % priority_temperature == 0))
       order[2] = 1;
-    if (rate_torque && (counter % rate_torque == 0))
+    if (priority_torque && (counter % priority_torque == 0))
       order[3] = 1;
     ++counter %= 100;
   }

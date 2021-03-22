@@ -43,10 +43,10 @@ public:
 
 private:
     ODrive *odrive;
-    int rate_position_velocity ;
-    int rate_bus_voltage;
-    int rate_temperature;
-    int rate_torque;
+    int priority_position_velocity ;
+    int priority_bus_voltage;
+    int priority_temperature;
+    int priority_torque;
     int counter;
     int motor;
     int order[4] = {0, 0, 0, 0};
