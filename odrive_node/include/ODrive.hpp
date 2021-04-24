@@ -66,9 +66,11 @@ public:
 private:
     int open_port(const std::string port);
     int send(const std::string cmd, const std::string *funct_name);
-    std::string recieve(const std::string *funct_name);
+    std::string receive(const std::string *funct_name);
     bool check_single_output(const std::string s, const std::string *funct_name);
     bool check_double_output(const std::string s, const std::string *funct_name);
-    int fd;
+
     const rclcpp::Node *node;
+    
+    int fd;
 };
