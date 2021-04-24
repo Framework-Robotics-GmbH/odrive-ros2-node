@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
-#include "ODrive.cpp"
+#include "ODrive.hpp"
 
 using namespace std::chrono_literals;
 class ODriveNode : public rclcpp::Node
