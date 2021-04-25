@@ -77,7 +77,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   }
 
 //set callback rate
-  timer_ = this->create_wall_timer(10ms, std::bind(&ODriveNode::odrive_callback, this));
+  timer_ = this->create_wall_timer(10ms, std::bind(&ODriveNode::odrive_timer_callback, this));
 }
 
 ODriveNode::~ODriveNode()
@@ -99,7 +99,7 @@ void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg)
   odrive->setVelocity(1, velocity);
 }
 
-void ODriveNode::odrive_callback()
+void ODriveNode::odrive_timer_callback()
 {
   // start one request at a time, skip if priority = 0
   if (!(order[0] || order[1] || order[2] || order[3]))

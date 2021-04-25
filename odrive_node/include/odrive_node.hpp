@@ -32,37 +32,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
-#include "ODrive.cpp"
+#include "ODrive.hpp"
 
 using namespace std::chrono_literals;
 class ODriveNode : public rclcpp::Node
 {
 public:
-    ODriveNode();
-    ~ODriveNode();
+  ODriveNode();
+  ~ODriveNode();
 
 private:
-    ODrive *odrive;
-    int priority_position_velocity ;
-    int priority_bus_voltage;
-    int priority_temperature;
-    int priority_torque;
-    int counter;
-    int motor;
-    int order[4] = {0, 0, 0, 0};
-    rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity0;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity1;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_position0;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_position1;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_torque0;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_torque1;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_bus_voltage;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature0;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature1;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity0;
-    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity1;
-    void odrive_callback();
-    void velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg);
-    void velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg);
+  void odrive_timer_callback();
+  void velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg);
+  void velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg);
+
+  ODrive *odrive;
+
+  int priority_position_velocity, priority_bus_voltage, priority_temperature,
+    priority_torque, counter, motor;
+  int order[4] = {0, 0, 0, 0};
+
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
+    publisher_velocity0, publisher_velocity1, publisher_position0,
+    publisher_position1, publisher_torque0, publisher_torque1,
+    publisher_bus_voltage, publisher_temperature0, publisher_temperature1;
+
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr
+    subscription_velocity0, subscription_velocity1;
 };
