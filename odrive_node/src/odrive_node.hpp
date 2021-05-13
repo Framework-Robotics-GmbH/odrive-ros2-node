@@ -52,7 +52,6 @@ private:
     int priority_torque;
     int counter;
     int motor;
-    double wheel_radius;
     double wheel_dist;
     int order[4] = {0, 0, 0, 0};
     rclcpp::TimerBase::SharedPtr timer_;

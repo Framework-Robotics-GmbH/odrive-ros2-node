@@ -12,8 +12,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->declare_parameter<int>("priority_bus_voltage", 2);
   this->declare_parameter<int>("priority_temperature", 3);
   this->declare_parameter<int>("priority_torque", 4);
-  this->declare_parameter<double>("wheel_dist", 3.14);
-  this->declare_parameter<double>("wheel_radius", 1);
+  this->declare_parameter<double>("wheel_dist",1);
 
   // node sets parameter, if given
   this->get_parameter("port", port);
@@ -23,7 +22,6 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->get_parameter("priority_temperature", priority_temperature);
   this->get_parameter("priority_torque", priority_torque);
   this->get_parameter("wheel_dist", wheel_dist);
-  this->get_parameter("wheel_radius", wheel_radius);
 
   odrive = new ODrive(port, this);
 
@@ -113,10 +111,10 @@ void ODriveNode::cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPt
   Vector3 angular = msg->angular;
   Vector3 linear = msg->linear;
   double vel = linear.x;
-  double omega = angular.z;
+  double angle = angular.z;
 
-  double r_omega = (vel + omega * wheel_dist / 2) / wheel_radius;
-  double l_omega = (vel - omega * wheel_dist / 2) / wheel_radius;
+  double r_speed = (angle * wheel_dist) / 2 + vel;
+  double l_speed = vel * 2.0 - r_speed;
   odrive->setVelocity(0, l_omega);
   odrive->setVelocity(1, r_omega);
 }
