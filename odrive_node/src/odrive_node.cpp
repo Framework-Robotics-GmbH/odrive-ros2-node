@@ -12,6 +12,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->declare_parameter<int>("priority_bus_voltage", 2);
   this->declare_parameter<int>("priority_temperature", 3);
   this->declare_parameter<int>("priority_torque", 4);
+  this->declare_parameter<double>("wheel_dist",1);
 
   // node sets parameter, if given
   this->get_parameter("port", port);
@@ -20,6 +21,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->get_parameter("priority_bus_voltage", priority_bus_voltage);
   this->get_parameter("priority_temperature", priority_temperature);
   this->get_parameter("priority_torque", priority_torque);
+  this->get_parameter("wheel_dist", wheel_dist);
 
   odrive = new ODrive(port, this);
 
@@ -75,6 +77,11 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   {
     subscription_velocity1 = this->create_subscription<std_msgs::msg::Float32>("odrive" + std::to_string(1) + "_set_velocity", 10, std::bind(&ODriveNode::velocity_callback1, this, std::placeholders::_1));
   }
+  if(motor == 2)
+  {
+    subscription_cmd_vel = this->create_subscription<geometry_msgs::msg::Twist>("odrive_cmd_velocity", 10, std::bind(&ODriveNode::cmd_velocity_callback, this, std::placeholders::_1));
+  }
+
 
 //set callback rate
   timer_ = this->create_wall_timer(10ms, std::bind(&ODriveNode::odrive_callback, this));
@@ -97,6 +104,19 @@ void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg)
 {
   float velocity = msg->data;
   odrive->setVelocity(1, velocity);
+}
+// send velocity on both motors from Twist Message
+void ODriveNode::cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+{
+  Vector3 angular = msg->angular;
+  Vector3 linear = msg->linear;
+  double vel = linear.x;
+  double angle = angular.z;
+
+  double r_speed = (angle * wheel_dist) / 2 + vel;
+  double l_speed = vel * 2.0 - r_speed;
+  odrive->setVelocity(0, l_omega);
+  odrive->setVelocity(1, r_omega);
 }
 
 void ODriveNode::odrive_callback()

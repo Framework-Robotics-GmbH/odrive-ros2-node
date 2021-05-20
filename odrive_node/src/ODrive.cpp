@@ -1,5 +1,5 @@
 #include "ODrive.hpp"
-
+using geometry_msgs::msg::Vector3;
 /*
 ODrive starts by opening UART connection
 */

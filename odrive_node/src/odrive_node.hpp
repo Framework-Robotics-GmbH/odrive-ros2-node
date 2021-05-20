@@ -32,9 +32,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
 #include "ODrive.cpp"
 
 using namespace std::chrono_literals;
+
 class ODriveNode : public rclcpp::Node
 {
 public:
@@ -49,6 +52,7 @@ private:
     int priority_torque;
     int counter;
     int motor;
+    double wheel_dist;
     int order[4] = {0, 0, 0, 0};
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity0;
@@ -62,7 +66,9 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature1;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity0;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity1;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_cmd_vel;
     void odrive_callback();
     void velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg);
     void velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg);
+    void cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 };
