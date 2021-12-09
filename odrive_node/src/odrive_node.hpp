@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "ODrive.cpp"
 
@@ -53,6 +54,9 @@ private:
     int counter;
     int motor;
     double wheel_dist;
+    double gear_ratio;
+    double set_r_speed;
+    double set_l_speed;
     int order[4] = {0, 0, 0, 0};
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_velocity0;
@@ -64,6 +68,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_bus_voltage;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature0;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature1;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_odom_vel;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity0;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity1;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_cmd_vel;

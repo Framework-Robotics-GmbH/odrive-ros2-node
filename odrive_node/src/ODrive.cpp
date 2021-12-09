@@ -228,7 +228,7 @@ int ODrive::setVelocity(const int motor, const float velocity)
     std::string msg = "v ";
     msg += std::to_string(motor);
     msg += " ";
-    msg += std::to_string((int)velocity);
+    msg += std::to_string(velocity);
     if (send(msg, &funct_name) > 0)
     {
         return 0;

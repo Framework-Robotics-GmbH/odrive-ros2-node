@@ -4,6 +4,8 @@ ODriveNode::ODriveNode() : Node("odrive_node")
 {
   std::string port = "/dev/ttyS1";
   counter = 0;
+  set_r_speed = 0.0;
+  set_l_speed = 0.0;
 
   // request parameter from Node
   this->declare_parameter<std::string>("port", port);
@@ -12,7 +14,8 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->declare_parameter<int>("priority_bus_voltage", 2);
   this->declare_parameter<int>("priority_temperature", 3);
   this->declare_parameter<int>("priority_torque", 4);
-  this->declare_parameter<double>("wheel_dist",1);
+  this->declare_parameter<double>("wheel_dist", 1);
+  this->declare_parameter<double>("gear_ratio", 1);
 
   // node sets parameter, if given
   this->get_parameter("port", port);
@@ -22,6 +25,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->get_parameter("priority_temperature", priority_temperature);
   this->get_parameter("priority_torque", priority_torque);
   this->get_parameter("wheel_dist", wheel_dist);
+  this->get_parameter("gear_ratio", gear_ratio);
 
   odrive = new ODrive(port, this);
 
@@ -80,6 +84,7 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   if(motor == 2)
   {
     subscription_cmd_vel = this->create_subscription<geometry_msgs::msg::Twist>("odrive_cmd_velocity", 10, std::bind(&ODriveNode::cmd_velocity_callback, this, std::placeholders::_1));
+    publisher_odom_vel = this->create_publisher<geometry_msgs::msg::TwistStamped>("odrive_odom_velocity", 10);
   }
 
 
@@ -89,6 +94,8 @@ ODriveNode::ODriveNode() : Node("odrive_node")
 
 ODriveNode::~ODriveNode()
 {
+  odrive->setVelocity(0, 0);
+  odrive->setVelocity(1, 0);
   delete (odrive);
 }
 
@@ -96,14 +103,14 @@ ODriveNode::~ODriveNode()
 void ODriveNode::velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg)
 {
   float velocity = msg->data;
-  odrive->setVelocity(0, velocity);
+  odrive->setVelocity(0, velocity / gear_ratio);
 }
 
 // send velocity to odrive motor 1
 void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg)
 {
   float velocity = msg->data;
-  odrive->setVelocity(1, velocity);
+  odrive->setVelocity(1, velocity / gear_ratio);
 }
 // send velocity on both motors from Twist Message
 void ODriveNode::cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -113,10 +120,16 @@ void ODriveNode::cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPt
   double vel = linear.x;
   double angle = angular.z;
 
-  double r_speed = (angle * wheel_dist) / 2 + vel;
-  double l_speed = vel * 2.0 - r_speed;
-  odrive->setVelocity(0, l_omega);
-  odrive->setVelocity(1, r_omega);
+  double r_speed = ((angle * wheel_dist) / 2 + vel);
+  double l_speed = (vel * 2.0 - r_speed);
+  std::cout << "Asked r_speed: " << r_speed << " l_speed: " << l_speed;
+  r_speed /= gear_ratio;
+  l_speed /= gear_ratio;
+  std::cout << " Aplied (" << gear_ratio << "x gear ratio) r_speed: " << r_speed << " l_speed: " << l_speed << std::endl;
+  set_r_speed = r_speed;
+  set_l_speed = l_speed;
+  odrive->setVelocity(0, r_speed);
+  odrive->setVelocity(1, l_speed);
 }
 
 void ODriveNode::odrive_callback()
@@ -141,16 +154,16 @@ void ODriveNode::odrive_callback()
     order[0] = 0;
     std::pair<float, float> values;
     auto position_msg = std_msgs::msg::Float32();
-    auto velovity_msg = std_msgs::msg::Float32();
+    auto velocity_msg = std_msgs::msg::Float32();
     if (motor == 2 || motor == 0)
     {
       values = odrive->getPosition_Velocity(0);
       if (values.first != -1.0)
       {
-        position_msg.data = values.first;
+        position_msg.data = values.first * gear_ratio;
         publisher_position0->publish(position_msg);
-        velovity_msg.data = values.second;
-        publisher_velocity0->publish(velovity_msg);
+        velocity_msg.data = values.second * gear_ratio;
+        publisher_velocity0->publish(velocity_msg);
       }
     }
     if (motor == 2 || motor == 1)
@@ -158,11 +171,30 @@ void ODriveNode::odrive_callback()
       values = odrive->getPosition_Velocity(1);
       if (values.first != -1.0)
       {
-        position_msg.data = values.first;
+        position_msg.data = values.first * gear_ratio;
         publisher_position1->publish(position_msg);
-        velovity_msg.data = values.second;
-        publisher_velocity1->publish(velovity_msg);
+        velocity_msg.data = values.second * gear_ratio;
+        publisher_velocity1->publish(velocity_msg);
       }
+    }
+    if (motor == 2)
+    {
+        auto odom_msg = geometry_msgs::msg::TwistStamped();
+//        double r_speed = odrive->getPosition_Velocity(0).second;
+//        double l_speed = odrive->getPosition_Velocity(1).second;
+        double r_speed = set_r_speed;
+        double l_speed = set_l_speed;
+        r_speed *= gear_ratio;
+        l_speed *= gear_ratio;
+
+        odom_msg.header.stamp = this->get_clock()->now();
+        // from the nav2 tutorial
+        odom_msg.twist.linear.x = (r_speed + l_speed) / 2;
+        odom_msg.twist.angular.z = (r_speed - l_speed) / wheel_dist;
+        // computed by hand
+//        odom_msg.twist.linear.x = (r_speed + l_speed) / 2;
+//        odom_msg.twist.angular.z = (-2 * l_speed) / wheel_dist;
+        publisher_odom_vel->publish(odom_msg);
     }
   }
   // publish bus voltage
