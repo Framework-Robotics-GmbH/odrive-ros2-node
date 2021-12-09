@@ -1,14 +1,12 @@
 #include "ODrive.hpp"
-using geometry_msgs::msg::Vector3;
+
 /*
 ODrive starts by opening UART connection
 */
-ODrive::ODrive(const std::string port, const rclcpp::Node *node) : node(node)
-{
+ODrive::ODrive(const std::string port, const rclcpp::Node *node) : node(node) {
     // this.node = node;
     fd = open_port(port);
-    if (fd == -1)
-    {
+    if (fd == -1) {
         RCLCPP_INFO(node->get_logger(), "ODrive could not open UART port\n");
         throw std::string("ODrive could not open UART port");
     }
@@ -17,8 +15,7 @@ ODrive::ODrive(const std::string port, const rclcpp::Node *node) : node(node)
 /*
 Cleanup by closing UART connection
 */
-ODrive::~ODrive()
-{
+ODrive::~ODrive() {
 
     flock(fd, LOCK_UN);
     close(fd);
@@ -30,37 +27,34 @@ ODrive::~ODrive()
 returns file descriptor with baudrate 115200,
 returns -1 if oening fails
 */
-int ODrive::open_port(const std::string port = "/dev/ttyS1")
-{
+int ODrive::open_port(const std::string port = "/dev/ttyS1") {
     // file descriptor
     int fd;
     fd = open(port.c_str(), O_RDWR | O_NOCTTY);
-    if (fd == -1)
-    {
+    if (fd == -1) {
         close(fd);
         RCLCPP_INFO(node->get_logger(), "open_port: Unable to open %s", port);
         return -1;
     }
 
     // lock to prevent others from interfering with the node
-    if (flock(fd, LOCK_EX | LOCK_NB) == -1)
-    {
+    if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
         flock(fd, LOCK_UN);
         close(fd);
-        RCLCPP_INFO(node->get_logger(), "Serial port with file descriptor %s is already locked by another process.", std::to_string(fd));
+        RCLCPP_INFO(node->get_logger(), "Serial port with file descriptor %s is already locked by another process.",
+                    std::to_string(fd));
         return -1;
     }
 
     struct termios tty;
 
-    if (tcgetattr(fd, &tty) != 0)
-    {
+    if (tcgetattr(fd, &tty) != 0) {
         flock(fd, LOCK_UN);
         close(fd);
         RCLCPP_INFO(node->get_logger(), "error from tggetattr");
         return -1;
     }
-    
+
     // disable parity
     tty.c_cflag &= ~PARENB;
 
@@ -92,8 +86,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1")
     tty.c_cc[VTIME] = 1;
     tty.c_cc[VMIN] = 0;
 
-    if (tcsetattr(fd, TCSANOW, &tty) != 0)
-    {
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
         flock(fd, LOCK_UN);
         close(fd);
         RCLCPP_INFO(node->get_logger(), "Error %i from tcsetattr: ", strerror(errno));
@@ -106,13 +99,10 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1")
 /*
 bitwise and each char
 */
-int ODrive::checksum(const std::string cmd)
-{
+int ODrive::checksum(const std::string cmd) {
     int cs = 0;
-    for (long unsigned int i = 0; i < cmd.length(); i++)
-    {
-        if (cmd[i] != '*')
-        {
+    for (long unsigned int i = 0; i < cmd.length(); i++) {
+        if (cmd[i] != '*') {
             cs = cs ^ cmd[i];
         }
     }
@@ -123,8 +113,7 @@ int ODrive::checksum(const std::string cmd)
 /*
 returns number of send chars
 */
-int ODrive::send(const std::string msg, const std::string *funct_name)
-{
+int ODrive::send(const std::string msg, const std::string *funct_name) {
     // flush in/out
     tcflush(fd, TCIOFLUSH);
     std::string msg_out = msg;
@@ -132,8 +121,7 @@ int ODrive::send(const std::string msg, const std::string *funct_name)
     msg_out += std::to_string(checksum(msg_out));
     msg_out += "\n";
     int w = write(fd, msg_out.c_str(), msg_out.size());
-    if (w == 0)
-    {
+    if (w == 0) {
         RCLCPP_INFO(node->get_logger(), "%s send zero chars\n", funct_name->c_str());
     }
     return w;
@@ -142,11 +130,9 @@ int ODrive::send(const std::string msg, const std::string *funct_name)
 /*
 checks input against regex
 */
-bool ODrive::check_single_output(const std::string msg, const std::string *funct_name)
-{
+bool ODrive::check_single_output(const std::string msg, const std::string *funct_name) {
     const std::string regex_ans = "^-?([0-9]+)(\\.){1}([0-9]+)$";
-    if (std::regex_match(msg, std::regex(regex_ans)))
-    {
+    if (std::regex_match(msg, std::regex(regex_ans))) {
         return true;
     }
     RCLCPP_INFO(node->get_logger(), "%s : regex caught wrong data: '%s'\n", funct_name->c_str(), msg);
@@ -156,11 +142,9 @@ bool ODrive::check_single_output(const std::string msg, const std::string *funct
 /*
 checks input against regex
 */
-bool ODrive::check_double_output(const std::string msg, const std::string *funct_name)
-{
+bool ODrive::check_double_output(const std::string msg, const std::string *funct_name) {
     const std::string regex_ans = "^-?([0-9]+)(\\.){1}([0-9]+)[\\ ]{1}-?([0-9]+)(\\.){1}([0-9]+)$";
-    if (std::regex_match(msg, std::regex(regex_ans)))
-    {
+    if (std::regex_match(msg, std::regex(regex_ans))) {
         return true;
     }
     RCLCPP_INFO(node->get_logger(), "%s : regex caught wrong data: '%s'\n", funct_name->c_str(), msg);
@@ -170,12 +154,10 @@ bool ODrive::check_double_output(const std::string msg, const std::string *funct
 /*
 recieve message via uart, check for correctness and remove checksum
 */
-std::string ODrive::recieve(const std::string *funct_name)
-{
+std::string ODrive::recieve(const std::string *funct_name) {
     char read_buf[80];
     memset(read_buf, '\0', sizeof(read_buf)); // clean out buffer
-    if (read(fd, read_buf, sizeof(read_buf) - 1) == 0)
-    {
+    if (read(fd, read_buf, sizeof(read_buf) - 1) == 0) {
         RCLCPP_INFO(node->get_logger(), "%s recieved no data\n", funct_name->c_str());
         return "";
     }
@@ -184,22 +166,18 @@ std::string ODrive::recieve(const std::string *funct_name)
 
     // check checksum
     size_t i = ans.find('*');
-    if (i == std::string::npos)
-    {
+    if (i == std::string::npos) {
         RCLCPP_INFO(node->get_logger(), "%s recieved no checksum", funct_name->c_str());
         return "";
     }
     std::string prefix = ans.substr(0, i);
     std::string suffix = ans.substr(i + 1);
-    try
-    {
-        if (checksum(prefix) == stoi(suffix))
-        {
+    try {
+        if (checksum(prefix) == stoi(suffix)) {
             return prefix;
         }
     }
-    catch (const std::invalid_argument &e)
-    {
+    catch (const std::invalid_argument &e) {
         RCLCPP_INFO(node->get_logger(), "%s recieved broken checksum\nMessage: %s\n", ans, funct_name->c_str());
     }
     return "";
@@ -208,12 +186,10 @@ std::string ODrive::recieve(const std::string *funct_name)
 /*
 send 0 Turn/s signal, returns -1 if nothing is send, 0 else
 */
-int ODrive::stop()
-{
+int ODrive::stop() {
     const std::string funct_name = "stop";
     std::string msg = "v 0 0";
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         return 0;
     }
     return -1;
@@ -222,15 +198,13 @@ int ODrive::stop()
 /*
 send velocity, returns -1 if nothing is send, 0 else
 */
-int ODrive::setVelocity(const int motor, const float velocity)
-{
+int ODrive::setVelocity(const int motor, const float velocity) {
     const std::string funct_name = "setVelocity";
     std::string msg = "v ";
     msg += std::to_string(motor);
     msg += " ";
     msg += std::to_string(velocity);
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         return 0;
     }
     RCLCPP_INFO(node->get_logger(), "could not set velocity: %f", velocity);
@@ -240,25 +214,21 @@ int ODrive::setVelocity(const int motor, const float velocity)
 /*
 request voltage input, return -1 if request fails
 */
-float ODrive::getBusVoltage()
-{
+float ODrive::getBusVoltage() {
     const std::string funct_name = "getBusVoltage";
     std::string msg = "r vbus_voltage";
 
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         std::string ans = recieve(&funct_name);
-        if (ans.size() > 0)
-        {
+        if (ans.size() > 0) {
             if (check_single_output(ans, &funct_name))
-                try
-                {
+                try {
                     float output = std::stof(ans);
                     return output;
                 }
-                catch (const std::invalid_argument &e)
-                {
-                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n", funct_name.c_str(), e.what(), ans);
+                catch (const std::invalid_argument &e) {
+                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n",
+                                funct_name.c_str(), e.what(), ans);
                 }
         }
     }
@@ -268,27 +238,22 @@ float ODrive::getBusVoltage()
 /*
 return touple of position and velocity, returns both as -1 if request fails
 */
-std::pair<float, float> ODrive::getPosition_Velocity(const int motor)
-{
+std::pair<float, float> ODrive::getPosition_Velocity(const int motor) {
     const std::string funct_name = "getPosition_Velocity";
     std::string msg = "f ";
     msg += std::to_string(motor);
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         std::string ans = recieve(&funct_name);
-        if (ans.size() > 0)
-        {
-            if (check_double_output(ans, &funct_name))
-            {
+        if (ans.size() > 0) {
+            if (check_double_output(ans, &funct_name)) {
                 size_t i = ans.find(' ');
-                try
-                {
+                try {
                     std::pair<float, float> output(std::stof(ans.substr(0, i)), std::stof(ans.substr(i + 1)));
                     return output;
                 }
-                catch (const std::invalid_argument &e)
-                {
-                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n", funct_name.c_str(), e.what(), ans);
+                catch (const std::invalid_argument &e) {
+                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n",
+                                funct_name.c_str(), e.what(), ans);
                 }
             }
         }
@@ -299,27 +264,22 @@ std::pair<float, float> ODrive::getPosition_Velocity(const int motor)
 /*
 request temperature, returns -1 if request fails
 */
-float ODrive::getTemperature(const int motor)
-{
+float ODrive::getTemperature(const int motor) {
     const std::string funct_name = "getTemperature";
     std::string msg = "r axis";
     msg += std::to_string(motor);
     msg += ".fet_thermistor.temperature";
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         std::string ans = recieve(&funct_name);
-        if (ans.size() > 0)
-        {
-            if (check_single_output(ans, &funct_name))
-            {
-                try
-                {
+        if (ans.size() > 0) {
+            if (check_single_output(ans, &funct_name)) {
+                try {
                     float output = std::stof(ans);
                     return output;
                 }
-                catch (const std::invalid_argument &e)
-                {
-                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n", funct_name.c_str(), e.what(), ans);
+                catch (const std::invalid_argument &e) {
+                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n",
+                                funct_name.c_str(), e.what(), ans);
                 }
             }
         }
@@ -330,27 +290,22 @@ float ODrive::getTemperature(const int motor)
 /*
 request torque, returns -1 if request fails
 */
-float ODrive::getTorque(const int motor)
-{
+float ODrive::getTorque(const int motor) {
     const std::string funct_name = "getTorque";
     std::string msg = "r axis";
     msg += std::to_string(motor);
     msg += ".controller.vel_integrator_torque";
-    if (send(msg, &funct_name) > 0)
-    {
+    if (send(msg, &funct_name) > 0) {
         std::string ans = recieve(&funct_name);
-        if (ans.length() > 0)
-        {
-            if (check_single_output(ans, &funct_name))
-            {
-                try
-                {
+        if (ans.length() > 0) {
+            if (check_single_output(ans, &funct_name)) {
+                try {
                     float output = std::stof(ans);
                     return output;
                 }
-                catch (const std::invalid_argument &e)
-                {
-                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n", funct_name.c_str(), e.what(), ans);
+                catch (const std::invalid_argument &e) {
+                    RCLCPP_INFO(node->get_logger(), "&s: recieved wrong data after regex check: %s: %s\n",
+                                funct_name.c_str(), e.what(), ans);
                 }
             }
         }
