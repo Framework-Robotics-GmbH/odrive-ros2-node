@@ -15,7 +15,7 @@ ROS2-Nodes for ODrive
 
 # Start with launch file
 ```bash
-ros2 launch launch/odrive_launch.py
+ros2 launch odrive_odom odrive_launch.py
 ```
 
 # `odrive_node`
