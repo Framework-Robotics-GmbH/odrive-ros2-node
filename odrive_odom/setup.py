@@ -9,8 +9,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
          ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name, ['launch/odrive_launch.py']),
+        ('share/' + package_name, ['package.xml', 'launch/odrive_launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

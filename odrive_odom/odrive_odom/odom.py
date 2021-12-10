@@ -51,7 +51,7 @@ class OdriveOdom(Node):
         self.th += delta_th
 
         odom_quat = R.from_euler('z', self.th).as_quat()
-        header = Header(stamp=current_time, frame_id=self.self.odom_frame_id)
+        header = Header(stamp=current_time, frame_id=self.odom_frame_id)
         quaternion_msg = Quaternion(x=odom_quat[0], y=odom_quat[1], z=odom_quat[2], w=odom_quat[3])
         odom_trans = TransformStamped(header=header,
                                       child_frame_id=self.child_frame_id,
