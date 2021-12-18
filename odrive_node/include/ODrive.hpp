@@ -44,20 +44,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include "rclcpp/rclcpp.hpp"
 
-class ODrive
-{
+class ODrive {
 public:
     ODrive(const std::string port, const rclcpp::Node *node);
+
     ~ODrive();
 
     // Commands
     int setVelocity(const int motor, const float velocity);
+
     int stop();
 
     // Getters
     std::pair<float, float> getPosition_Velocity(const int motor_number);
+
     float getBusVoltage();
+
     float getTemperature(const int motor);
+
     float getTorque(const int motor);
 
     // General helper functions
@@ -65,10 +69,15 @@ public:
 
 private:
     int open_port(const std::string port);
+
     int send(const std::string cmd, const std::string *funct_name);
+
     std::string recieve(const std::string *funct_name);
+
     bool check_single_output(const std::string s, const std::string *funct_name);
+
     bool check_double_output(const std::string s, const std::string *funct_name);
+
     int fd;
     const rclcpp::Node *node;
 };

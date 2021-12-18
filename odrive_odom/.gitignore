@@ -1,13 +1,3 @@
-build/
-install/
-log/
-
-### Custom ###
-# Pytest
-**/.pytest_cache
-**/__pycache__
-**/*.pyc
-**/.coverage
 
 # Created by https://www.toptal.com/developers/gitignore/api/ros,ros2,c++,python,pycharm+all,jupyternotebooks,linux,data
 # Edit at https://www.toptal.com/developers/gitignore?templates=ros,ros2,c++,python,pycharm+all,jupyternotebooks,linux,data
@@ -386,13 +376,3 @@ COLCON_IGNORE
 AMENT_IGNORE
 
 # End of https://www.toptal.com/developers/gitignore/api/ros,ros2,c++,python,pycharm+all,jupyternotebooks,linux,data
-
-# Added exception
-!package.xml
-.gitignore
-LICENSE
-resource/
-setup.cfg
-setup.py
-slam_refinement/
-test/
