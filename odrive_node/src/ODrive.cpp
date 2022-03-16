@@ -201,7 +201,7 @@ send velocity, returns -1 if nothing is send, 0 else
 int ODrive::setVelocity(const int motor, const float velocity) {
     const std::string funct_name = "setVelocity";
     std::string msg = "v ";
-    msg += std::to_string(motor);
+    msg += std::to_string(1 - motor);   // invert motor
     msg += " ";
     msg += std::to_string(velocity);
     if (send(msg, &funct_name) > 0) {

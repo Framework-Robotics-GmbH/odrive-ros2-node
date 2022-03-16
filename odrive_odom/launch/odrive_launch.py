@@ -14,6 +14,7 @@
 
 from pathlib import Path
 
+import launch
 import numpy as np
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -28,6 +29,11 @@ def generate_launch_description():
     dev_path = Path('/dev/')
     acm_ports = list(dev_path.glob('ttyACM*'))
     default_value = acm_ports[-1] if acm_ports else ''
+
+
+    params_file = LaunchConfiguration('params_file')
+    declare_params_file = launch.actions.DeclareLaunchArgument('params_file')
+    declared_arguments.append(declare_params_file)
 
     declared_arguments.append(
         DeclareLaunchArgument(
@@ -45,6 +51,7 @@ def generate_launch_description():
     odrive_port = LaunchConfiguration("odrive_port")
 
     odrive_node = Node(
+        name="odrive_node",
         package="odrive_node",
         executable="odrive_node",
         parameters=[
@@ -54,10 +61,12 @@ def generate_launch_description():
              'priority_bus_voltage': 2,
              'priority_temperature': 3,
              'priority_torque': 4,
-             'wheel_dist': 0.26,  # in meters TODO: to a YAML config
+             # 'wheel_dist': 0.352,  # in meters TODO: to a YAML config
              # gear_ratio * circumference * constant[expected time / real time]
-             'gear_ratio': (1 / 28.42) * (0.083 * np.pi) * 1.002185502,
+             # 'gear_ratio': (1 / 28.42) * (0.083 * np.pi) * 1.002185502,
+             # 'gear_ratio': 0.00922634713,
              },
+            params_file,
         ],
         remappings=[
             ('odrive_cmd_velocity', 'cmd_vel'),
