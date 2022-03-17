@@ -30,7 +30,7 @@ class OdriveCalibration(Node):
 
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
 
-        self.get_logger().info('Running Odrive calibration sequence')
+        self.get_logger().info(f'Running Odrive calibration sequence in {self.mode} mode')
         self.odrv = odrive.find_any(timeout=5)
         self.odrv.clear_errors()
         self.axes = [self.odrv.axis0, self.odrv.axis1, ]
@@ -38,7 +38,11 @@ class OdriveCalibration(Node):
             self.normal_init()
         if self.mode == 'debug':
             self.debug()
+        # self.debug()
         self.end_node()
+
+    def destroy_node(self) -> bool:
+        return super(OdriveCalibration, self).destroy_node()
 
     def end_node(self) -> None:
         self.get_logger().info('Odrive calibration sequence finished')
@@ -49,7 +53,7 @@ class OdriveCalibration(Node):
         start = time.time()
         init = np.array([axis.encoder.shadow_count for axis in self.axes])
         self.get_logger().info(f'Pre {[axis.current_state for axis in self.axes]}')
-        if all(axis.current_state != 1 for axis in self.axes):
+        if all(axis.current_state != 1 for axis in self.axes) and self.mode == 'normal':
             self.get_logger().info('Odrive already calibrated')
         else:
             for axis in self.axes:
@@ -78,15 +82,22 @@ class OdriveCalibration(Node):
         odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().info)
 
     def debug(self) -> None:
+        self.get_logger().info('Odrive DEBUG')
         self.odrv.clear_errors()
         init = np.array([axis.encoder.shadow_count for axis in self.axes])
-        while True:
-            time.sleep(0.1)
-            current = init - np.array([axis.encoder.shadow_count for axis in self.axes])
-            relative = current / np.array([axis.encoder.config.cpr for axis in self.axes])
-            debug_info = f"{[axis.current_state for axis in self.axes]} " \
-                         f"{np2nice_string(current)} | {np2nice_string(relative)}"
-            self.get_logger().info(debug_info)
+        try:
+            while True:
+                time.sleep(0.1)
+                current = init - np.array([axis.encoder.shadow_count for axis in self.axes])
+                relative = current / np.array([axis.encoder.config.cpr for axis in self.axes])
+                debug_info = f"{[axis.current_state for axis in self.axes]} " \
+                             f"{np2nice_string(current)} | {np2nice_string(relative)}"
+                self.get_logger().info(debug_info)
+        except KeyboardInterrupt:
+            self.odrv.clear_errors()
+            for axis in self.axes:
+                axis.requested_state = enums.AXIS_STATE_IDLE
+            self.get_logger().info('Exiting and leaving Odrive in IDLE mode')
 
 
 def main(args=None):  # pragma: no cover

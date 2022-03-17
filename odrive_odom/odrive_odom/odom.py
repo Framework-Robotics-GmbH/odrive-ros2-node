@@ -1,13 +1,16 @@
 """Based on Nav2 and ROS diff drive odometry tutorial."""
 import numpy as np
+import odrive
 import rclpy
 from geometry_msgs.msg import Quaternion, TransformStamped, Transform, Vector3, \
-    PoseWithCovariance, Pose, Point, TwistWithCovariance, TwistStamped
+    PoseWithCovariance, Pose, Point, TwistWithCovariance, TwistStamped, TwistWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation as R
 from std_msgs.msg import Header
 from tf2_ros import TransformBroadcaster
+
+from odrive_odom.init import np2nice_string
 
 
 class OdriveOdom(Node):
@@ -30,21 +33,20 @@ class OdriveOdom(Node):
 
         self.last_time = self.get_clock().now().to_msg()
 
-        self.get_logger().info('Initialized')
+        self.get_logger().info('Initialized ' * 600)
 
-    def process_twist_odom(self, twist_stamped_odom: TwistStamped):
+    def process_twist_odom(self, twist_stamped_odom: TwistWithCovarianceStamped):
         """Callback for when the odrive position is ready."""
 
         current_time = twist_stamped_odom.header.stamp
 
-        dt = (
-                    current_time.sec + current_time.nanosec / 1e9 - self.last_time.sec - self.last_time.nanosec / 1e9)
+        dt = (current_time.sec + current_time.nanosec / 1e9 - self.last_time.sec - self.last_time.nanosec / 1e9)
         twist_odom = twist_stamped_odom.twist
         vx = twist_odom.linear.x
         vth = twist_odom.angular.z
         delta_x = vx * np.cos(vth) * dt
         delta_y = vx * np.sin(vth) * dt
-        delta_th = vth * dt * 2.2
+        delta_th = vth * dt# * 2.2
 
         self.x += delta_x
         self.y += delta_y

@@ -61,10 +61,6 @@ def generate_launch_description():
              'priority_bus_voltage': 2,
              'priority_temperature': 3,
              'priority_torque': 4,
-             # 'wheel_dist': 0.352,  # in meters TODO: to a YAML config
-             # gear_ratio * circumference * constant[expected time / real time]
-             # 'gear_ratio': (1 / 28.42) * (0.083 * np.pi) * 1.002185502,
-             # 'gear_ratio': 0.00922634713,
              },
             params_file,
         ],
@@ -77,15 +73,6 @@ def generate_launch_description():
         },
         arguments=['--ros-args', '--log-level', 'warn', ],
     )
-    odrive_odom = Node(
-        package="odrive_odom",
-        executable="odom",
-        output={
-            "stdout": "screen",
-            "stderr": "screen",
-        },
-    )
-
     odrive_calibration = Node(
         package="odrive_odom",
         executable='init',
@@ -96,9 +83,19 @@ def generate_launch_description():
         # condition=to_init_odrive,
     )
 
+    odrive_odom = Node(
+        package="odrive_odom",
+        executable="odom",
+        output={
+            "stdout": "screen",
+            "stderr": "screen",
+        },
+    )
+
+
     nodes = [
         odrive_node,
-        odrive_odom,
+        # odrive_odom,
         odrive_calibration,
     ]
 

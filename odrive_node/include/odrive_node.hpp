@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "std_msgs/msg/float32.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "ODrive.hpp"
 
@@ -69,7 +70,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_bus_voltage;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature0;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_temperature1;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_odom_vel;
+//    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_odom_vel;
+    rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr publisher_odom_vel;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity0;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscription_velocity1;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_cmd_vel;

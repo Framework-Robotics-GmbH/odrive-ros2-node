@@ -86,7 +86,8 @@ ODriveNode::ODriveNode() : Node("odrive_node") {
                                                                                             &ODriveNode::cmd_velocity_callback,
                                                                                             this,
                                                                                             std::placeholders::_1));
-        publisher_odom_vel = this->create_publisher<geometry_msgs::msg::TwistStamped>("odrive_odom_velocity", 10);
+//        publisher_odom_vel = this->create_publisher<geometry_msgs::msg::TwistStamped>("odrive_odom_velocity", 10);
+        publisher_odom_vel = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("odrive_odom_velocity", 10);
     }
 
 
@@ -171,7 +172,8 @@ void ODriveNode::odrive_callback() {
             }
         }
         if (motor == 2) {
-            auto odom_msg = geometry_msgs::msg::TwistStamped();
+//            auto odom_msg = geometry_msgs::msg::TwistStamped();
+            auto odom_msg = geometry_msgs::msg::TwistWithCovarianceStamped();
 //        double r_speed = odrive->getPosition_Velocity(0).second;
 //        double l_speed = odrive->getPosition_Velocity(1).second;
             double r_speed = set_r_speed;
@@ -181,8 +183,8 @@ void ODriveNode::odrive_callback() {
 
             odom_msg.header.stamp = this->get_clock()->now();
             // from the nav2 tutorial
-            odom_msg.twist.linear.x = (r_speed + l_speed) / 2;
-            odom_msg.twist.angular.z = (r_speed - l_speed) / wheel_dist;
+            odom_msg.twist.twist.linear.x = (r_speed + l_speed) / 2;
+            odom_msg.twist.twist.angular.z = (r_speed - l_speed) / wheel_dist;
             // computed by hand
 //        odom_msg.twist.linear.x = (r_speed + l_speed) / 2;
 //        odom_msg.twist.angular.z = (-2 * l_speed) / wheel_dist;
