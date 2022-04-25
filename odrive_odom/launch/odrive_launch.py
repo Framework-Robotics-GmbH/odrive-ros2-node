@@ -15,11 +15,17 @@
 from pathlib import Path
 
 import launch
+import launch_ros
 import numpy as np
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+# from launch_ros.parameters_type import ParameterValue
+from launch_ros.parameter_descriptions import ParameterValue
+
+
+# from rcl_interfaces.msg import ParameterValue
 
 
 def generate_launch_description():
@@ -29,7 +35,6 @@ def generate_launch_description():
     dev_path = Path('/dev/')
     acm_ports = list(dev_path.glob('ttyACM*'))
     default_value = acm_ports[-1] if acm_ports else ''
-
 
     params_file = LaunchConfiguration('params_file')
     declare_params_file = launch.actions.DeclareLaunchArgument('params_file')
@@ -48,20 +53,23 @@ def generate_launch_description():
 
     to_init_odrive = LaunchConfiguration('init_odrive')  # noqa: F841
 
-    odrive_port = LaunchConfiguration("odrive_port")
+    odrive_port = LaunchConfiguration("odrive_port", default=default_value)
 
     odrive_node = Node(
         name="odrive_node",
         package="odrive_node",
         executable="odrive_node",
         parameters=[
-            {'port': odrive_port,
-             'motor': 2,
-             'priority_position_velocity': 1,
-             'priority_bus_voltage': 2,
-             'priority_temperature': 3,
-             'priority_torque': 4,
-             },
+            {
+                # 'port': ParameterValue(odrive_port, value_type=str),
+                # 'port': str(default_value),
+                # 'port': '/dev/ttyAMA0',
+                'motor': 2,
+                'priority_position_velocity': 1,
+                'priority_bus_voltage': 2,
+                'priority_temperature': 3,
+                'priority_torque': 4,
+            },
             params_file,
         ],
         remappings=[
@@ -71,16 +79,20 @@ def generate_launch_description():
             "stdout": "screen",
             "stderr": "screen",
         },
-        arguments=['--ros-args', '--log-level', 'warn', ],
+        arguments=['--ros-args', '--log-level', 'error', ],
     )
     odrive_calibration = Node(
         package="odrive_odom",
         executable='init',
+        parameters=[
+            params_file,
+        ],
         output={
             "stdout": "screen",
             "stderr": "screen",
         },
         # condition=to_init_odrive,
+        arguments=['--ros-args', '--log-level', 'warn', ],
     )
 
     odrive_odom = Node(
@@ -91,7 +103,6 @@ def generate_launch_description():
             "stderr": "screen",
         },
     )
-
 
     nodes = [
         odrive_node,

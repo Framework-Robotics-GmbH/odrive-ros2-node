@@ -46,7 +46,7 @@ class OdriveOdom(Node):
         vth = twist_odom.angular.z
         delta_x = vx * np.cos(vth) * dt
         delta_y = vx * np.sin(vth) * dt
-        delta_th = vth * dt# * 2.2
+        delta_th = vth * dt  # * 2.2
 
         self.x += delta_x
         self.y += delta_y

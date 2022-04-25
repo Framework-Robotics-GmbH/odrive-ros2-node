@@ -26,19 +26,25 @@ class OdriveCalibration(Node):
     def __init__(self) -> None:
         super().__init__('odrive_calibration')
         self.declare_parameters(namespace='',
-                                parameters=[('mode', 'normal'), ])
+                                parameters=[('mode', 'normal'),
+                                            ('port', ''), ])
 
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
+        port = self.get_parameter('port').get_parameter_value().string_value
 
         self.get_logger().info(f'Running Odrive calibration sequence in {self.mode} mode')
-        self.odrv = odrive.find_any(timeout=5)
+
+        if port == '':
+            self.odrv = odrive.find_any(timeout=5)
+        else:
+            self.odrv = odrive.find_any(port, timeout=5)
         self.odrv.clear_errors()
         self.axes = [self.odrv.axis0, self.odrv.axis1, ]
         if self.mode in {'normal', 'verbose'}:
             self.normal_init()
         if self.mode == 'debug':
             self.debug()
-        # self.debug()
+
         self.end_node()
 
     def destroy_node(self) -> bool:
@@ -79,7 +85,10 @@ class OdriveCalibration(Node):
                                    f'Took {time.time() - start:4.2f} seconds')
         self.get_logger().info(f'{self.odrv.error=}')
         self.get_logger().info(f'Post {[axis.current_state for axis in self.axes]}')
-        odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().info)
+        while True:
+            res = odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().info)
+            self.get_logger().info(f'ERRORS: {res=}')
+            time.sleep(5)
 
     def debug(self) -> None:
         self.get_logger().info('Odrive DEBUG')

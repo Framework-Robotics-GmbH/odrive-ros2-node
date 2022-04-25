@@ -2,6 +2,8 @@
 
 ODriveNode::ODriveNode() : Node("odrive_node") {
     std::string port = "/dev/ttyS1";
+    // log port ros2 as info
+
     counter = 0;
     set_r_speed = 0.0;
     set_l_speed = 0.0;
@@ -14,7 +16,8 @@ ODriveNode::ODriveNode() : Node("odrive_node") {
     this->declare_parameter<int>("priority_temperature", 3);
     this->declare_parameter<int>("priority_torque", 4);
     this->declare_parameter<double>("wheel_dist", 1);
-    this->declare_parameter<double>("gear_ratio", 1);
+    this->declare_parameter<double>("left_gear_ratio", 1);
+    this->declare_parameter<double>("right_gear_ratio", 1);
 
     // node sets parameter, if given
     this->get_parameter("port", port);
@@ -24,7 +27,8 @@ ODriveNode::ODriveNode() : Node("odrive_node") {
     this->get_parameter("priority_temperature", priority_temperature);
     this->get_parameter("priority_torque", priority_torque);
     this->get_parameter("wheel_dist", wheel_dist);
-    this->get_parameter("gear_ratio", gear_ratio);
+    this->get_parameter("left_gear_ratio", l_gear_ratio);
+    this->get_parameter("right_gear_ratio", r_gear_ratio);
 
     odrive = new ODrive(port, this);
 
@@ -93,6 +97,8 @@ ODriveNode::ODriveNode() : Node("odrive_node") {
 
 //set callback rate
     timer_ = this->create_wall_timer(10ms, std::bind(&ODriveNode::odrive_callback, this));
+
+    RCLCPP_INFO(this->get_logger(), port + " port\n");
 }
 
 ODriveNode::~ODriveNode() {
@@ -104,13 +110,13 @@ ODriveNode::~ODriveNode() {
 // send velocity to odrive motor 0
 void ODriveNode::velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg) {
     float velocity = msg->data;
-    odrive->setVelocity(0, velocity / gear_ratio);
+    odrive->setVelocity(0, velocity / l_gear_ratio);    // TODO: Check this is left motor
 }
 
 // send velocity to odrive motor 1
 void ODriveNode::velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg) {
     float velocity = msg->data;
-    odrive->setVelocity(1, velocity / gear_ratio);
+    odrive->setVelocity(1, velocity / r_gear_ratio);
 }
 
 // send velocity on both motors from Twist Message
@@ -122,11 +128,12 @@ void ODriveNode::cmd_velocity_callback(const geometry_msgs::msg::Twist::SharedPt
 
     double r_speed = ((angle * wheel_dist) / 2 + vel);
     double l_speed = (vel * 2.0 - r_speed);
-    std::cout << "Asked r_speed: " << r_speed << " l_speed: " << l_speed;
-    r_speed /= gear_ratio;
-    l_speed /= gear_ratio;
-    std::cout << " Aplied (" << gear_ratio << "x gear ratio) r_speed: " << r_speed << " l_speed: " << l_speed
-              << std::endl;
+    RCLCPP_WARN(this->get_logger(), "Asked r_speed: %f l_speed: %f", r_speed, l_speed);
+    r_speed *= r_gear_ratio;
+    l_speed *= l_gear_ratio;
+//    std::cout << " Aplied (" << gear_ratio << "x gear ratio) r_speed: " << r_speed << " l_speed: " << l_speed
+//              << std::endl;
+    RCLCPP_WARN(this->get_logger(), "Aplied (%f %f x gear ratio) r_speed: %f l_speed: %f", r_gear_ratio, l_gear_ratio, r_speed, l_speed);
     set_r_speed = r_speed;
     set_l_speed = l_speed;
     odrive->setVelocity(0, r_speed);
@@ -156,19 +163,19 @@ void ODriveNode::odrive_callback() {
         if (motor == 2 || motor == 0) {
             values = odrive->getPosition_Velocity(0);
             if (values.first != -1.0) {
-                position_msg.data = values.first * gear_ratio;
+                position_msg.data = values.first / l_gear_ratio;    // TODO: Check this is left motor
                 publisher_position0->publish(position_msg);
-                velocity_msg.data = values.second * gear_ratio;
+                velocity_msg.data = values.second / r_gear_ratio;
                 publisher_velocity0->publish(velocity_msg);
             }
         }
         if (motor == 2 || motor == 1) {
             values = odrive->getPosition_Velocity(1);
             if (values.first != -1.0) {
-                position_msg.data = values.first * gear_ratio;
-                publisher_position1->publish(position_msg);
-                velocity_msg.data = values.second * gear_ratio;
-                publisher_velocity1->publish(velocity_msg);
+                position_msg.data = values.first / l_gear_ratio;    // TODO: Check this is left motor
+                publisher_position0->publish(position_msg);
+                velocity_msg.data = values.second / r_gear_ratio;
+                publisher_velocity0->publish(velocity_msg);
             }
         }
         if (motor == 2) {
@@ -178,8 +185,8 @@ void ODriveNode::odrive_callback() {
 //        double l_speed = odrive->getPosition_Velocity(1).second;
             double r_speed = set_r_speed;
             double l_speed = set_l_speed;
-            r_speed *= gear_ratio;
-            l_speed *= gear_ratio;
+            r_speed /= r_gear_ratio;
+            l_speed /= l_gear_ratio;
 
             odom_msg.header.stamp = this->get_clock()->now();
             // from the nav2 tutorial

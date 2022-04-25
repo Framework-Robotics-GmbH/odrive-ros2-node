@@ -56,7 +56,8 @@ private:
     int counter;
     int motor;
     double wheel_dist;
-    double gear_ratio;
+    double l_gear_ratio;
+    double r_gear_ratio;
     double set_r_speed;
     double set_l_speed;
     int order[4] = {0, 0, 0, 0};

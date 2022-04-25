@@ -33,7 +33,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1") {
     fd = open(port.c_str(), O_RDWR | O_NOCTTY);
     if (fd == -1) {
         close(fd);
-        RCLCPP_INFO(node->get_logger(), "open_port: Unable to open %s", port);
+        RCLCPP_ERROR(node->get_logger(), "open_port: Unable to open %s", port);
         return -1;
     }
 
@@ -41,7 +41,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1") {
     if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
         flock(fd, LOCK_UN);
         close(fd);
-        RCLCPP_INFO(node->get_logger(), "Serial port with file descriptor %s is already locked by another process.",
+        RCLCPP_ERROR(node->get_logger(), "Serial port with file descriptor %s is already locked by another process.",
                     std::to_string(fd));
         return -1;
     }
@@ -51,7 +51,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1") {
     if (tcgetattr(fd, &tty) != 0) {
         flock(fd, LOCK_UN);
         close(fd);
-        RCLCPP_INFO(node->get_logger(), "error from tggetattr");
+        RCLCPP_ERROR(node->get_logger(), "error from tggetattr");
         return -1;
     }
 
@@ -89,7 +89,7 @@ int ODrive::open_port(const std::string port = "/dev/ttyS1") {
     if (tcsetattr(fd, TCSANOW, &tty) != 0) {
         flock(fd, LOCK_UN);
         close(fd);
-        RCLCPP_INFO(node->get_logger(), "Error %i from tcsetattr: ", strerror(errno));
+        RCLCPP_ERROR(node->get_logger(), "Error %i from tcsetattr: ", strerror(errno));
         return -1;
     }
 
@@ -207,7 +207,7 @@ int ODrive::setVelocity(const int motor, const float velocity) {
     if (send(msg, &funct_name) > 0) {
         return 0;
     }
-    RCLCPP_INFO(node->get_logger(), "could not set velocity: %f", velocity);
+    RCLCPP_ERROR(node->get_logger(), "could not set velocity: %f", velocity);
     return -1;
 }
 
