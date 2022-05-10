@@ -85,10 +85,16 @@ class OdriveCalibration(Node):
                                    f'Took {time.time() - start:4.2f} seconds')
         self.get_logger().info(f'{self.odrv.error=}')
         self.get_logger().info(f'Post {[axis.current_state for axis in self.axes]}')
-        while True:
-            res = odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().info)
-            self.get_logger().info(f'ERRORS: {res=}')
+        # c = 0.13365718214298553
+        while False:    # TODO: replace
+            res = odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().error)
             time.sleep(5)
+            # for axis in self.axes:
+            #     axis.motor.config.torque_lim = c
+            #     c /= 1.1
+            self.get_logger().error(f'ERRORS: {res=} TORQUE:= {self.axes[0].motor.config.torque_lim}')
+            # self.odrv.save_configuration()
+
 
     def debug(self) -> None:
         self.get_logger().info('Odrive DEBUG')
