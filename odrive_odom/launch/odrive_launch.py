@@ -81,6 +81,34 @@ def generate_launch_description():
         },
         arguments=['--ros-args', '--log-level', 'error', ],
     )
+
+    roboclaw_node = Node(
+        name="roboclaw_node",
+        package="roboclaw_node",
+        executable="roboclaw_node",
+        parameters=[
+            {
+                # 'port': ParameterValue(roboclaw_port, value_type=str),
+                # 'port': str(default_value),
+                # 'port': '/dev/ttyAMA0',
+                'motor': 2,
+                'priority_position_velocity': 1,
+                'priority_bus_voltage': 2,
+                'priority_temperature': 3,
+                'priority_torque': 4,
+            },
+            params_file,
+        ],
+        remappings=[
+            ('roboclaw_cmd_velocity', 'cmd_vel'),
+        ],
+        output={
+            "stdout": "screen",
+            "stderr": "screen",
+        },
+        arguments=['--ros-args', '--log-level', 'info', ],
+    )
+
     odrive_calibration = Node(
         package="odrive_odom",
         executable='init',
@@ -105,7 +133,8 @@ def generate_launch_description():
     )
 
     nodes = [
-        odrive_node,
+        # odrive_node,
+        roboclaw_node,
         # odrive_odom,
         odrive_calibration,
     ]

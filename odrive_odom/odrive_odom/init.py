@@ -1,3 +1,4 @@
+import re
 import time
 import numpy as np
 import rclpy
@@ -20,6 +21,20 @@ def np2nice_string(x):
     return ' '.join([f'{i:+13.3f}' for i in x])
 
 
+class PrintCollector:
+    def __init__(self):
+        self.lines = []
+
+    def __call__(self, text):
+        self.lines.append(text)
+
+    def __str__(self):
+        return '\n'.join(self.lines)
+
+    def clear(self):
+        self.lines = []
+
+
 class OdriveCalibration(Node):
     """Calibraties Odrive if necessary."""
 
@@ -33,6 +48,7 @@ class OdriveCalibration(Node):
         port = self.get_parameter('port').get_parameter_value().string_value
 
         self.get_logger().info(f'Running Odrive calibration sequence in {self.mode} mode')
+        self.print_collector = PrintCollector()
 
         if port == '':
             self.odrv = odrive.find_any(timeout=5)
@@ -86,15 +102,17 @@ class OdriveCalibration(Node):
         self.get_logger().info(f'{self.odrv.error=}')
         self.get_logger().info(f'Post {[axis.current_state for axis in self.axes]}')
         # c = 0.13365718214298553
-        while False:    # TODO: replace
-            res = odrive.utils.dump_errors(self.odrv, printfunc=self.get_logger().error)
+        while True:
+            odrive.utils.dump_errors(self.odrv, printfunc=self.print_collector)
+
+            if 'ERROR' in str(self.print_collector):
+                self.get_logger().error(f'{self.print_collector}')
             time.sleep(5)
             # for axis in self.axes:
             #     axis.motor.config.torque_lim = c
             #     c /= 1.1
-            self.get_logger().error(f'ERRORS: {res=} TORQUE:= {self.axes[0].motor.config.torque_lim}')
+            # self.get_logger().error(f'ERRORS: {res=}')
             # self.odrv.save_configuration()
-
 
     def debug(self) -> None:
         self.get_logger().info('Odrive DEBUG')
