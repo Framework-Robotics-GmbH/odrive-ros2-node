@@ -106,7 +106,7 @@ def generate_launch_description():
             "stdout": "screen",
             "stderr": "screen",
         },
-        arguments=['--ros-args', '--log-level', 'info', ],
+        arguments=['--ros-args', '--log-level', 'error', ], # TODO: change to warn
     )
 
     odrive_calibration = Node(

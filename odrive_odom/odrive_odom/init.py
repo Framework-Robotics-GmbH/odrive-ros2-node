@@ -107,6 +107,9 @@ class OdriveCalibration(Node):
 
             if 'ERROR' in str(self.print_collector):
                 self.get_logger().error(f'{self.print_collector}')
+                self.odrv.clear_errors()
+                self.get_logger().info(f'Errors cleared')
+                self.print_collector.clear()
             time.sleep(5)
             # for axis in self.axes:
             #     axis.motor.config.torque_lim = c
