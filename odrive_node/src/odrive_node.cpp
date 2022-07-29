@@ -2,7 +2,7 @@
 
 ODriveNode::ODriveNode() : Node("odrive_node")
 {
-  std::string port = "/dev/ttyS1";
+  std::string port = "/dev/ttymxc3";
   counter = 0;
   active_counter = 0;
   use_active = active = false;
@@ -15,11 +15,11 @@ ODriveNode::ODriveNode() : Node("odrive_node")
   this->declare_parameter<int>("priority_bus_voltage", 2);
   this->declare_parameter<int>("priority_temperature", 3);
   this->declare_parameter<int>("priority_torque", 4);
-  this->declare_parameter<bool>("use_active", false);
-  this->declare_parameter<bool>("use_timeout", false);
-  this->declare_parameter<bool>("use_offset", false);
+  this->declare_parameter<bool>("use_active", true);
+  this->declare_parameter<bool>("use_timeout", true);
+  this->declare_parameter<bool>("use_offset", true);
   this->declare_parameter<float>("offset", 7);
-  this->declare_parameter<bool>("use_idle", false);
+  this->declare_parameter<bool>("use_idle", true);
 
   // node sets parameter, if given
   this->get_parameter("port", port);
