@@ -32,7 +32,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "ODrive.hpp"
+
+#define ACTIVE_TIMEOUT 50
+#define INPUT_TIMEOUT 50
 
 using namespace std::chrono_literals;
 class ODriveNode : public rclcpp::Node
@@ -45,12 +49,21 @@ private:
   void odrive_timer_callback();
   void velocity_callback0(const std_msgs::msg::Float32::SharedPtr msg);
   void velocity_callback1(const std_msgs::msg::Float32::SharedPtr msg);
+  void active_callback(const std_msgs::msg::Bool::SharedPtr msg);
+  void offset_callback(const std_msgs::msg::Float32::SharedPtr msg);
+  void setVelocity(const int motor, const float velocity);
+  void disable(const int motor);
+  void enable(const int motor);
+  
 
   ODrive *odrive;
 
   int priority_position_velocity, priority_bus_voltage, priority_temperature,
-    priority_torque, counter, motor;
+    priority_torque, counter, active_counter, motor;
   int order[4] = {0, 0, 0, 0};
+  int timeout_counter[2] = {0,0};
+  bool use_active, active, use_timeout, use_offset, use_idle;
+  float offset;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -60,5 +73,6 @@ private:
     publisher_bus_voltage, publisher_temperature0, publisher_temperature1;
 
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr
-    subscription_velocity0, subscription_velocity1;
+    subscription_velocity0, subscription_velocity1, subscription_offset;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subscription_active;
 };

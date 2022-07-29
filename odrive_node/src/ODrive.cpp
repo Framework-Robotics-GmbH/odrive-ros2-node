@@ -28,9 +28,9 @@ ODrive::~ODrive()
 
 /*
 returns file descriptor with baudrate 115200,
-returns -1 if oening fails
+returns -1 if opening fails
 */
-int ODrive::open_port(const std::string port = "/dev/ttyS1")
+int ODrive::open_port(const std::string port = "/dev/ttymxc3")
 {
     // file descriptor
     int fd;
@@ -208,10 +208,11 @@ std::string ODrive::receive(const std::string *funct_name)
 /*
 send 0 Turn/s signal, returns -1 if nothing is send, 0 else
 */
-int ODrive::stop()
+int ODrive::stop(int motor = 0)
 {
-    const std::string funct_name = "stop";
-    std::string msg = "v 0 0";
+    std::string motornumber = std::to_string(motor);
+    const std::string funct_name = "stop motor " + motornumber;
+    std::string msg = "v " + motornumber + " 0";
     if (send(msg, &funct_name) > 0)
     {
         return 0;
@@ -355,5 +356,55 @@ float ODrive::getTorque(const int motor)
             }
         }
     }
+    return -1;
+}
+
+/*
+request mode of motor, returns -1 if request fails
+*/
+int ODrive::getMode(const int motor)
+{
+    std::string motornumber = std::to_string(motor);
+    const std::string funct_name = "getMode " + motornumber;
+    std::string msg = "r axis";
+    msg += std::to_string(motor);
+    msg += ".current_state";
+    if (send(msg, &funct_name) > 0)
+    {
+        std::string ans = receive(&funct_name);
+        if (ans.length() > 0)
+        {
+            if (check_single_output(ans, &funct_name))
+            {
+                try
+                {
+                    float output = std::stoi(ans);
+                    return output;
+                }
+                catch (const std::invalid_argument &e)
+                {
+                    RCLCPP_INFO(node->get_logger(), "&s: received wrong data after regex check: %s: %s\n", funct_name.c_str(), e.what(), ans);
+                }
+            }
+        }
+    }
+    return -1;
+}
+
+/*
+send mode, returns -1 if nothing is send, 0 else
+*/
+int ODrive::setMode(const int motor, const int mode)
+{
+    const std::string funct_name = "setMode";
+    std::string msg = "w axis";
+    msg += std::to_string(motor);
+    msg += ".requested_state ";
+    msg += std::to_string(mode);
+    if (send(msg, &funct_name) > 0)
+    {
+        return 0;
+    }
+    RCLCPP_INFO(node->get_logger(), "could not set mode: %f", mode);
     return -1;
 }

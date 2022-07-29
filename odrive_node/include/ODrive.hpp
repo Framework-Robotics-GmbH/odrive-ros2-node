@@ -52,13 +52,16 @@ public:
 
     // Commands
     int setVelocity(const int motor, const float velocity);
-    int stop();
+    int setMode(const int motor, const int mode);
+    void setOffset(const float offset);
+    int stop(const int motor);
 
     // Getters
     std::pair<float, float> getPosition_Velocity(const int motor_number);
     float getBusVoltage();
     float getTemperature(const int motor);
     float getTorque(const int motor);
+    int getMode(const int motor);
 
     // General helper functions
     int checksum(const std::string cmd);
